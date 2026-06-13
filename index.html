@@ -93,6 +93,12 @@
     <div class="card" style="margin:0"><h2>Penyandang Kesulitan/Disabilitas</h2><div class="note" id="t_disability"></div><div class="chartbox"><canvas id="c_disability"></canvas></div></div>
   </div>
 
+  <div class="grid" style="margin-top:18px">
+    <div class="card" style="margin:0"><h2>Bahasa Sehari-hari</h2><div class="note" id="t_language"></div><div class="chartbox tall"><canvas id="c_language"></canvas></div></div>
+    <div class="card" style="margin:0"><h2>Suku Bangsa</h2><div class="note" id="t_ethnicity"></div><div class="chartbox tall"><canvas id="c_ethnicity"></canvas></div></div>
+  </div>
+  <div class="note" style="margin:-6px 2px 0;font-style:italic">Bahasa: dekode lengkap (≈1.200 kode BPS). Suku: baru kelompok utama yang didekode dari pola data; sisanya digabung "Lainnya" — menunggu buku kode suku BPS untuk dekode penuh ±1.300 kategori.</div>
+
   <div class="card" style="margin-top:18px">
     <h2 id="childTitle">Wilayah</h2>
     <div class="note">Klik baris untuk menelusuri. Diurutkan menurut jumlah penduduk.</div>
@@ -168,7 +174,10 @@ function renderCharts(code){
   drawBar('c_industry', distRows(code,'industry').slice(0,12),'t_industry','#ffb454');
   drawBar('c_employ', distRows(code,'employ'),'t_employ','#b98cff');
   drawDoughnut('c_disability', distRows(code,'disability'),'t_disability');
+  drawBar('c_language', lainLast(distRows(code,'language')),'t_language','#6fd0e8');
+  drawBar('c_ethnicity', lainLast(distRows(code,'ethnicity')),'t_ethnicity','#ff8c66');
 }
+const lainLast=rows=>{const r=rows.filter(x=>x[0]!=='Lainnya'),l=rows.find(x=>x[0]==='Lainnya');if(l)r.push(l);return r;};
 
 // ---------- KPIs + crumb ----------
 function setKpis(node){
@@ -298,6 +307,8 @@ function renderChartsNational(){
   drawBar('c_industry', topRows(nationVars.industry).slice(0,12),'t_industry','#ffb454');
   drawBar('c_employ', topRows(nationVars.employ),'t_employ','#b98cff');
   drawDoughnut('c_disability', topRows(nationVars.disability),'t_disability');
+  drawBar('c_language', lainLast(topRows(nationVars.language)),'t_language','#6fd0e8');
+  drawBar('c_ethnicity', lainLast(topRows(nationVars.ethnicity)),'t_ethnicity','#ff8c66');
 }
 const topRows=o=>Object.entries(o||{}).map(([k,v])=>[k==='null'?'Tidak terjawab':k,v]).sort((a,b)=>b[1]-a[1]);
 const orderRows=(o,v)=>{const r=Object.entries(o||{}).map(([k,x])=>[k==='null'?'Tidak terjawab':k,x]);r.sort((a,b)=>(ORDER[v].indexOf(a[0])-ORDER[v].indexOf(b[0])));return r;};
