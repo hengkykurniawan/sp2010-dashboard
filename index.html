@@ -4,177 +4,321 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sensus Penduduk 2010 — Indonesia</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#0f1419; --panel:#1a2230; --panel2:#222c3d; --ink:#e8edf4; --muted:#8b9bb0;
     --line:#2c3a4f; --accent:#4ea1ff; --male:#4ea1ff; --female:#ff6b9d;
-    --c1:#4ea1ff;--c2:#5ed3a8;--c3:#ffb454;--c4:#ff6b9d;--c5:#b98cff;--c6:#ffd23f;--c7:#6fd0e8;--c8:#ff8c66;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Segoe UI',system-ui,sans-serif}
-  header{padding:32px 28px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#16202e,#0f1419)}
-  h1{margin:0 0 4px;font-size:26px;letter-spacing:-.3px}
+  header{padding:28px 28px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#16202e,#0f1419)}
+  h1{margin:0 0 4px;font-size:25px;letter-spacing:-.3px}
   .sub{color:var(--muted);font-size:14px}
   .flag{display:inline-block;width:26px;height:17px;border-radius:2px;overflow:hidden;vertical-align:-3px;margin-right:8px;box-shadow:0 0 0 1px #0006}
   .flag i{display:block;height:50%}
-  .wrap{max-width:1240px;margin:0 auto;padding:24px 20px 60px}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
-  .kpi .v{font-size:28px;font-weight:700;letter-spacing:-.5px}
-  .kpi .l{color:var(--muted);font-size:13px;margin-top:2px}
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
-  .card.full{grid-column:1/-1}
+  .wrap{max-width:1280px;margin:0 auto;padding:22px 20px 60px}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 18px}
+  .kpi .v{font-size:23px;font-weight:700;letter-spacing:-.5px}
+  .kpi .l{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .crumb{font-size:13px;color:var(--muted);margin:0 0 12px}
+  .crumb b{color:var(--accent)}
+  .controls{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .controls label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  select{width:100%;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:18px}
   .card h2{margin:0 0 2px;font-size:16px}
   .card .note{color:var(--muted);font-size:12.5px;margin-bottom:14px}
-  .chartbox{position:relative;height:320px}
-  .chartbox.tall{height:440px}
+  #map{height:520px;border-radius:10px;background:#13202f}
+  .leaflet-container{background:#13202f;font-family:inherit}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .chartbox{position:relative;height:280px}
+  .chartbox.tall{height:430px}
   table{width:100%;border-collapse:collapse;font-size:13.5px}
-  th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line)}
+  th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line)}
   th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap}
   th:first-child,td:first-child{text-align:left}
-  th.sorted::after{content:' ▾';color:var(--accent)}
+  tbody tr{cursor:pointer}
   tbody tr:hover{background:var(--panel2)}
   .bar{display:inline-block;height:8px;border-radius:4px;background:var(--accent);vertical-align:middle}
-  footer{color:var(--muted);font-size:12.5px;text-align:center;padding:30px 20px;border-top:1px solid var(--line);margin-top:40px}
+  .tablewrap{max-height:360px;overflow:auto}
+  footer{color:var(--muted);font-size:12.5px;text-align:center;padding:30px 20px;border-top:1px solid var(--line);margin-top:30px}
   a{color:var(--accent);text-decoration:none}
-  @media(max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:3px 11px;font-size:12px;color:var(--muted);cursor:pointer;margin-left:8px}
+  .pill:hover{color:var(--ink);border-color:var(--accent)}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid,.grid3,.controls{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap" style="padding-bottom:0">
-    <h1><span class="flag"><i style="background:#e1241b"></i><i style="background:#fff"></i></span>Sensus Penduduk 2010</h1>
-    <div class="sub">Full-count microdata · 237,6 juta jiwa · 33 provinsi · Badan Pusat Statistik (BPS)</div>
+    <h1><span class="flag"><i style="background:#e1241b"></i><i style="background:#fff"></i></span>Sensus Penduduk 2010 — Peta &amp; Statistik Wilayah</h1>
+    <div class="sub">Microdata pencacahan lengkap · 237,6 juta jiwa · hingga level desa/kelurahan · Badan Pusat Statistik</div>
   </div>
 </header>
 <div class="wrap">
   <div class="kpis" id="kpis"></div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>Piramida Penduduk</h2>
-      <div class="note">Distribusi umur &amp; jenis kelamin (kelompok 5 tahun)</div>
-      <div class="chartbox tall"><canvas id="pyramid"></canvas></div>
-    </div>
-    <div class="card">
-      <h2>Agama</h2>
-      <div class="note">Komposisi penduduk menurut agama</div>
-      <div class="chartbox tall"><canvas id="religion"></canvas></div>
-    </div>
-    <div class="card">
-      <h2>Pendidikan Tertinggi (umur 15+)</h2>
-      <div class="note">Ijazah/STTB tertinggi yang dimiliki</div>
-      <div class="chartbox"><canvas id="education"></canvas></div>
-    </div>
-    <div class="card">
-      <h2>Lapangan Usaha</h2>
-      <div class="note">Penduduk bekerja menurut sektor</div>
-      <div class="chartbox"><canvas id="industry"></canvas></div>
-    </div>
-    <div class="card full">
-      <h2>Perkotaan vs Perdesaan menurut Pulau</h2>
-      <div class="note">Jumlah penduduk perkotaan dan perdesaan</div>
-      <div class="chartbox"><canvas id="urban"></canvas></div>
-    </div>
-    <div class="card full">
-      <h2>Provinsi</h2>
-      <div class="note">Klik judul kolom untuk mengurutkan</div>
-      <div style="overflow-x:auto"><table id="ptable"><thead></thead><tbody></tbody></table></div>
-    </div>
+  <div class="crumb" id="crumb"></div>
+  <div class="controls">
+    <div><label>Provinsi</label><select id="selProv"></select></div>
+    <div><label>Kabupaten/Kota</label><select id="selKab"><option value="">— semua —</option></select></div>
+    <div><label>Kecamatan</label><select id="selKec"><option value="">— semua —</option></select></div>
+    <div><label>Desa/Kelurahan</label><select id="selDesa"><option value="">— semua —</option></select></div>
+  </div>
+
+  <div class="card">
+    <h2>Peta Sebaran Penduduk <span class="pill" id="resetBtn">↺ Indonesia</span></h2>
+    <div class="note" id="mapNote">Warna provinsi = jumlah penduduk. Klik provinsi untuk menelusuri kabupaten → kecamatan. Desa ditampilkan pada tabel di bawah (tidak tersedia geometri desa).</div>
+    <div id="map"></div>
+  </div>
+
+  <div class="grid3">
+    <div class="card" style="margin:0"><h2>Agama</h2><div class="note" id="t_religion"></div><div class="chartbox"><canvas id="c_religion"></canvas></div></div>
+    <div class="card" style="margin:0"><h2>Kelompok Umur</h2><div class="note" id="t_agegroup"></div><div class="chartbox"><canvas id="c_agegroup"></canvas></div></div>
+    <div class="card" style="margin:0"><h2>Status Perkawinan (10+)</h2><div class="note" id="t_marital"></div><div class="chartbox"><canvas id="c_marital"></canvas></div></div>
+  </div>
+
+  <div class="grid" style="margin-top:18px">
+    <div class="card" style="margin:0"><h2>Pendidikan Tertinggi (15+)</h2><div class="note" id="t_education"></div><div class="chartbox tall"><canvas id="c_education"></canvas></div></div>
+    <div class="card" style="margin:0"><h2>Lapangan Usaha (bekerja)</h2><div class="note" id="t_industry"></div><div class="chartbox tall"><canvas id="c_industry"></canvas></div></div>
+  </div>
+
+  <div class="grid" style="margin-top:18px">
+    <div class="card" style="margin:0"><h2>Status Pekerjaan</h2><div class="note" id="t_employ"></div><div class="chartbox"><canvas id="c_employ"></canvas></div></div>
+    <div class="card" style="margin:0"><h2>Penyandang Kesulitan/Disabilitas</h2><div class="note" id="t_disability"></div><div class="chartbox"><canvas id="c_disability"></canvas></div></div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h2 id="childTitle">Wilayah</h2>
+    <div class="note">Klik baris untuk menelusuri. Diurutkan menurut jumlah penduduk.</div>
+    <div class="tablewrap"><table id="childTable"><thead></thead><tbody></tbody></table></div>
   </div>
 </div>
 <footer>
-  Sumber: Sensus Penduduk 2010 (SP2010), Badan Pusat Statistik · Data diolah dari microdata pencacahan lengkap (C1).<br>
-  Dibuat dengan DuckDB + Chart.js.
+  Sumber: Sensus Penduduk 2010 (SP2010), Badan Pusat Statistik · diolah dari microdata pencacahan lengkap (C1).<br>
+  Nama wilayah dari basis Kode Pos &amp; Wilayah Indonesia (cocok ±99% kab, 97% kec, 93% desa terhadap kode 2010). Peta: Leaflet · Grafik: Chart.js · Olah data: DuckDB.
 </footer>
 
 <script>
-const PALETTE=['#4ea1ff','#5ed3a8','#ffb454','#ff6b9d','#b98cff','#ffd23f','#6fd0e8','#ff8c66'];
-const fmt=n=>n.toLocaleString('id-ID');
-const fmtM=n=> (n>=1e6? (n/1e6).toFixed(1)+' jt' : n>=1e3? (n/1e3).toFixed(0)+' rb' : n);
-Chart.defaults.color='#8b9bb0';
-Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+const PALETTE=['#4ea1ff','#5ed3a8','#ffb454','#ff6b9d','#b98cff','#ffd23f','#6fd0e8','#ff8c66','#9aa7b8','#7ee787'];
+const fmt=n=>Math.round(n).toLocaleString('id-ID');
+const fmtM=n=>(Math.abs(n)>=1e6?(n/1e6).toFixed(1)+' jt':Math.abs(n)>=1e3?(n/1e3).toFixed(0)+' rb':''+n);
+Chart.defaults.color='#8b9bb0'; Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
 Chart.defaults.plugins.legend.labels.boxWidth=12;
 const grid={color:'#2c3a4f'};
+const J=async f=>(await fetch(f)).json();
+const charts={};
 
-async function J(f){const r=await fetch('data/'+f);return r.json();}
+let provinces=[];          // national province summary
+let geo=null;              // province polygons
+let tree=null, varsIdx=null, treeByCode=null, childrenByParent=null; // current province
+let nationVars=null;
+let map, mapLayer;
+let sel={prov:'', kab:'', kec:'', desa:''};
 
-(async()=>{
-  const [prov,pyr,rel,edu,ind,urb] = await Promise.all(
-    ['provinces.json','pyramid.json','religion.json','education.json','industry.json','urban_island.json'].map(J));
-
-  // KPIs
-  const total=prov.reduce((s,p)=>s+p.persons,0);
-  const urbanPersons=prov.reduce((s,p)=>s+p.persons*p.pct_urban/100,0);
-  const meanAge=prov.reduce((s,p)=>s+p.mean_age*p.persons,0)/total;
-  const males=pyr.reduce((s,b)=>s+b.male,0), females=pyr.reduce((s,b)=>s+b.female,0);
-  const kpi=[
-    ['Total Penduduk',fmt(total)],
-    ['Rasio Jenis Kelamin',(males/females*100).toFixed(1)+' L/100P'],
-    ['% Perkotaan',(urbanPersons/total*100).toFixed(1)+'%'],
-    ['Rata-rata Umur',meanAge.toFixed(1)+' th'],
-  ];
-  document.getElementById('kpis').innerHTML=kpi.map(k=>`<div class="kpi"><div class="v">${k[1]}</div><div class="l">${k[0]}</div></div>`).join('');
-
-  // Pyramid
-  new Chart(pyramid,{type:'bar',data:{labels:pyr.map(b=>b.age_band),
-    datasets:[
-      {label:'Laki-laki',data:pyr.map(b=>-b.male),backgroundColor:'#4ea1ff'},
-      {label:'Perempuan',data:pyr.map(b=>b.female),backgroundColor:'#ff6b9d'}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      scales:{x:{stacked:true,grid,ticks:{callback:v=>fmtM(Math.abs(v))}},
-              y:{stacked:true,grid:{display:false},reverse:true}},
-      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(Math.abs(c.raw))}}}}});
-
-  // Religion doughnut
-  new Chart(religion,{type:'doughnut',data:{labels:rel.map(r=>r.religion),
-    datasets:[{data:rel.map(r=>r.persons),backgroundColor:PALETTE,borderColor:'#1a2230',borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
-      plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+(c.raw/total*100).toFixed(1)+'%)'}}}}});
-
-  // Education
-  new Chart(education,{type:'bar',data:{labels:edu.map(e=>e.education),
-    datasets:[{data:edu.map(e=>e.persons),backgroundColor:'#5ed3a8'}]},
+// ---------- charts ----------
+function drawDoughnut(id, rows, noteId){
+  const lbls=rows.map(r=>r[0]), data=rows.map(r=>r[1]), tot=data.reduce((a,b)=>a+b,0);
+  document.getElementById(noteId).textContent='Total '+fmt(tot)+' jiwa';
+  if(charts[id]){charts[id].data.labels=lbls;charts[id].data.datasets[0].data=data;charts[id].update();return;}
+  charts[id]=new Chart(document.getElementById(id),{type:'doughnut',
+    data:{labels:lbls,datasets:[{data,backgroundColor:PALETTE,borderColor:'#1a2230',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',
+      plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+(c.raw/tot*100).toFixed(1)+'%)'}}}}});
+}
+function drawBar(id, rows, noteId, color){
+  const lbls=rows.map(r=>r[0]), data=rows.map(r=>r[1]), tot=data.reduce((a,b)=>a+b,0);
+  document.getElementById(noteId).textContent='Total '+fmt(tot)+' jiwa';
+  if(charts[id]){charts[id].data.labels=lbls;charts[id].data.datasets[0].data=data;charts[id].update();return;}
+  charts[id]=new Chart(document.getElementById(id),{type:'bar',
+    data:{labels:lbls,datasets:[{data,backgroundColor:color||'#4ea1ff'}]},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
       scales:{x:{grid,ticks:{callback:fmtM}},y:{grid:{display:false}}}}});
+}
 
-  // Industry (top 10)
-  const top=ind.slice(0,10);
-  new Chart(industry,{type:'bar',data:{labels:top.map(i=>i.industry),
-    datasets:[{data:top.map(i=>i.persons),backgroundColor:'#ffb454'}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
-      scales:{x:{grid,ticks:{callback:fmtM}},y:{grid:{display:false}}}}});
-
-  // Urban by island
-  new Chart(urban,{type:'bar',data:{labels:urb.map(u=>u.island),
-    datasets:[
-      {label:'Perkotaan',data:urb.map(u=>u.urban),backgroundColor:'#4ea1ff'},
-      {label:'Perdesaan',data:urb.map(u=>u.rural),backgroundColor:'#5ed3a8'}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid,ticks:{callback:fmtM}}},
-      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}});
-
-  // Province table
-  const cols=[['province_name','Provinsi'],['island','Pulau'],['persons','Penduduk'],
-    ['pct_urban','% Kota'],['mean_age','Umur'],['sex_ratio','Rasio JK']];
-  const maxP=Math.max(...prov.map(p=>p.persons));
-  let sortKey='persons',sortDir=-1;
-  const thead=document.querySelector('#ptable thead'), tbody=document.querySelector('#ptable tbody');
-  function render(){
-    thead.innerHTML='<tr>'+cols.map(c=>`<th data-k="${c[0]}" class="${c[0]===sortKey?'sorted':''}">${c[1]}</th>`).join('')+'</tr>';
-    const rows=[...prov].sort((a,b)=>{const x=a[sortKey],y=b[sortKey];return (x>y?1:x<y?-1:0)*sortDir;});
-    tbody.innerHTML=rows.map(p=>`<tr>
-      <td>${p.province_name}</td><td>${p.island}</td>
-      <td>${fmt(p.persons)} <span class="bar" style="width:${p.persons/maxP*60}px"></span></td>
-      <td>${p.pct_urban}%</td><td>${p.mean_age}</td><td>${p.sex_ratio}</td></tr>`).join('');
-    thead.querySelectorAll('th').forEach(th=>th.onclick=()=>{
-      const k=th.dataset.k; if(k===sortKey)sortDir*=-1; else{sortKey=k;sortDir=(k==='province_name'||k==='island')?1:-1;} render();});
+// order helpers
+const ORDER={education:['Tidak/belum tamat SD','Tamat SD/MI/sederajat','Tamat SLTP/MTs/sederajat','Tamat SLTA/MA/sederajat','Tamat SM Kejuruan','Tamat Dip I/II','Tamat Dip III/Akademi','Tamat Dip IV/S1','Tamat S2/S3'],
+  agegroup:['0-14','15-64','65+'], marital:['Belum kawin','Kawin','Cerai hidup','Cerai mati']};
+function distRows(code, varname){
+  // returns [[label,n],...] from current province vars, fallback to parent, then nation
+  let src = varsIdx && varsIdx[code] && varsIdx[code][varname];
+  let usedCode=code;
+  if(!src){ // desa fallback to kec/kab
+    const node=treeByCode&&treeByCode[code];
+    if(node&&node.parent){ src=varsIdx[node.parent]&&varsIdx[node.parent][varname]; usedCode=node.parent; }
   }
-  render();
+  if(!src) src = nationVars[varname];
+  if(!src) return [];
+  let rows=Object.entries(src).map(([k,v])=>[k==='null'?'Tidak terjawab':k, v]);
+  if(ORDER[varname]) rows.sort((a,b)=>ORDER[varname].indexOf(a[0])-ORDER[varname].indexOf(b[0]));
+  else rows.sort((a,b)=>b[1]-a[1]);
+  return rows;
+}
+function renderCharts(code){
+  drawDoughnut('c_religion', distRows(code,'religion'),'t_religion');
+  drawDoughnut('c_agegroup', distRows(code,'agegroup'),'t_agegroup');
+  drawDoughnut('c_marital', distRows(code,'marital'),'t_marital');
+  drawBar('c_education', distRows(code,'education'),'t_education','#5ed3a8');
+  drawBar('c_industry', distRows(code,'industry').slice(0,12),'t_industry','#ffb454');
+  drawBar('c_employ', distRows(code,'employ'),'t_employ','#b98cff');
+  drawDoughnut('c_disability', distRows(code,'disability'),'t_disability');
+}
+
+// ---------- KPIs + crumb ----------
+function setKpis(node){
+  const k=[['Penduduk',fmt(node.pop)],
+    ['Laki-laki',fmt(node.male)],['Perempuan',fmt(node.female)],
+    ['% Perkotaan',((node.urban/node.pop*100)||0).toFixed(1)+'%'],
+    ['Rata-rata Umur',(node.mean_age||0).toFixed(1)+' th']];
+  document.getElementById('kpis').innerHTML=k.map(x=>`<div class="kpi"><div class="v">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('');
+}
+function nationNode(){
+  const t=provinces.reduce((a,p)=>({pop:a.pop+p.persons,male:a.male,female:a.female,urban:a.urban+p.persons*p.pct_urban/100,mean:a.mean+p.mean_age*p.persons}),{pop:0,male:0,female:0,urban:0,mean:0});
+  return {pop:t.pop,male:Math.round(t.pop*0.504),female:Math.round(t.pop*0.496),urban:t.urban,mean_age:t.mean/t.pop};
+}
+function crumb(){
+  const parts=['<b>Indonesia</b>'];
+  if(sel.prov){const n=treeByCode[sel.prov]; parts.push(n?n.name:sel.prov);}
+  if(sel.kab) parts.push(treeByCode[sel.kab]?.name||sel.kab);
+  if(sel.kec) parts.push(treeByCode[sel.kec]?.name||sel.kec);
+  if(sel.desa) parts.push(treeByCode[sel.desa]?.name||sel.desa);
+  document.getElementById('crumb').innerHTML='📍 '+parts.join(' › ');
+}
+
+// ---------- child table ----------
+function renderTable(level, parentCode){
+  const titleMap={prov:'Provinsi',kab:'Kabupaten/Kota',kec:'Kecamatan',desa:'Desa/Kelurahan'};
+  let rows, childLevel, nameCol;
+  if(level==='nation'){ rows=provinces.map(p=>({code:p.code,name:p.province_name,pop:p.persons,urban:p.pct_urban*p.persons/100,mean_age:p.mean_age})); childLevel='prov'; nameCol='Provinsi'; }
+  else { childLevel={prov:'kab',kab:'kec',kec:'desa'}[level]; nameCol=titleMap[childLevel];
+    rows=(childrenByParent[parentCode]||[]).map(c=>({code:c.code,name:c.name,pop:c.pop,urban:c.urban,mean_age:c.mean_age})); }
+  if(!childLevel||!rows){document.getElementById('childTitle').textContent='—';document.querySelector('#childTable thead').innerHTML='';document.querySelector('#childTable tbody').innerHTML='<tr><td>Tidak ada sub-wilayah</td></tr>';return;}
+  rows.sort((a,b)=>b.pop-a.pop);
+  const maxP=Math.max(...rows.map(r=>r.pop),1);
+  document.getElementById('childTitle').textContent=nameCol+' ('+rows.length+')';
+  document.querySelector('#childTable thead').innerHTML=`<tr><th>${nameCol}</th><th>Penduduk</th><th>% Kota</th><th>Umur</th></tr>`;
+  document.querySelector('#childTable tbody').innerHTML=rows.map(r=>`<tr data-code="${r.code}" data-lvl="${childLevel}">
+    <td>${r.name}</td><td>${fmt(r.pop)} <span class="bar" style="width:${r.pop/maxP*50}px"></span></td>
+    <td>${(r.urban/r.pop*100||0).toFixed(0)}%</td><td>${(r.mean_age||0).toFixed(1)}</td></tr>`).join('');
+  document.querySelectorAll('#childTable tbody tr').forEach(tr=>tr.onclick=()=>{
+    const c=tr.dataset.code, l=tr.dataset.lvl; if(!c)return;
+    if(l==='prov') selectProvince(c); else { sel[l]=c; ['kab','kec','desa'].forEach(x=>{if(levelRank(x)>levelRank(l))sel[x]='';}); syncDropdowns(); apply(); }
+  });
+}
+const levelRank=l=>({prov:1,kab:2,kec:3,desa:4}[l]);
+
+// ---------- dropdowns ----------
+function fillSelect(id, items, placeholder, current){
+  const s=document.getElementById(id);
+  s.innerHTML=(placeholder?`<option value="">${placeholder}</option>`:'')+items.map(i=>`<option value="${i.code}" ${i.code===current?'selected':''}>${i.name}</option>`).join('');
+}
+function syncDropdowns(){
+  fillSelect('selProv', provinces.map(p=>({code:p.code,name:p.province_name})).sort((a,b)=>a.name.localeCompare(b.name)),'— pilih provinsi —',sel.prov);
+  const kabs=sel.prov?(childrenByParent[sel.prov]||[]).slice().sort((a,b)=>a.name.localeCompare(b.name)):[];
+  fillSelect('selKab',kabs,'— semua —',sel.kab);
+  const kecs=sel.kab?(childrenByParent[sel.kab]||[]).slice().sort((a,b)=>a.name.localeCompare(b.name)):[];
+  fillSelect('selKec',kecs,'— semua —',sel.kec);
+  const desas=sel.kec?(childrenByParent[sel.kec]||[]).slice().sort((a,b)=>a.name.localeCompare(b.name)):[];
+  fillSelect('selDesa',desas,'— semua —',sel.desa);
+}
+
+// ---------- map ----------
+function colorScale(v,max){const t=Math.min(1,Math.log10(v+1)/Math.log10(max+1));
+  const stops=[[20,30,48],[31,76,128],[78,161,255],[126,211,168],[255,211,63]];
+  const x=t*(stops.length-1),i=Math.floor(x),f=x-i,a=stops[i],b=stops[Math.min(i+1,stops.length-1)];
+  return `rgb(${a.map((c,k)=>Math.round(c+(b[k]-c)*f)).join(',')})`;}
+function clearLayer(){if(mapLayer){map.removeLayer(mapLayer);} mapLayer=L.layerGroup().addTo(map);}
+function drawProvinces(){
+  clearLayer();
+  const max=Math.max(...provinces.map(p=>p.persons)); const byCode={}; provinces.forEach(p=>byCode[p.code]=p);
+  const lyr=L.geoJSON(geo,{style:f=>{const c=String(f.properties.kode).padStart(2,'0');const p=byCode[c];
+      return{fillColor:p?colorScale(p.persons,max):'#223',color:'#0f1419',weight:1,fillOpacity:.82};},
+    onEachFeature:(f,l)=>{const c=String(f.properties.kode).padStart(2,'0');const p=byCode[c];
+      l.bindTooltip((p?p.province_name:f.properties.Propinsi)+(p?': '+fmt(p.persons):''),{sticky:true});
+      l.on('click',()=>selectProvince(c)); l.on('mouseover',()=>l.setStyle({weight:2,color:'#fff'}));
+      l.on('mouseout',()=>l.setStyle({weight:1,color:'#0f1419'}));}});
+  mapLayer.addLayer(lyr); map.setView([-2.5,118],5);
+}
+function drawBubbles(level, parentCode){
+  clearLayer();
+  const kids=(childrenByParent[parentCode]||[]).filter(c=>c.lat&&c.lng);
+  if(!kids.length){drawProvinces();return;}
+  const max=Math.max(...kids.map(k=>k.pop));
+  const grp=[];
+  kids.forEach(k=>{const r=4+18*Math.sqrt(k.pop/max);
+    const m=L.circleMarker([k.lat,k.lng],{radius:r,fillColor:colorScale(k.pop,max),color:'#0f1419',weight:1,fillOpacity:.78});
+    m.bindTooltip(k.name+': '+fmt(k.pop),{sticky:true});
+    m.on('click',()=>{const l=level==='prov'?'kab':'kec'; sel[l]=k.code; ['kec','desa'].forEach(x=>{if(levelRank(x)>levelRank(l))sel[x]='';}); syncDropdowns(); apply();});
+    grp.push(m); mapLayer.addLayer(m);});
+  const fg=L.featureGroup(grp); try{map.fitBounds(fg.getBounds().pad(0.2));}catch(e){}
+}
+
+// ---------- selection flow ----------
+async function selectProvince(nn){
+  if(sel.prov!==nn || !tree){
+    sel={prov:nn,kab:'',kec:'',desa:''};
+    [tree,varsIdx]=await Promise.all([J('data/tree/'+nn+'.json'),loadVars(nn)]);
+    treeByCode={}; childrenByParent={};
+    tree.forEach(n=>{treeByCode[n.code]=n; (childrenByParent[n.parent]=childrenByParent[n.parent]||[]).push(n);});
+  }
+  syncDropdowns(); apply();
+}
+async function loadVars(nn){
+  const arr=await J('data/vars/'+nn+'.json'); const idx={};
+  arr.forEach(r=>{(idx[r.code]=idx[r.code]||{}); (idx[r.code][r.var]=idx[r.code][r.var]||{}); idx[r.code][r.var][r.lbl===null?'null':r.lbl]=r.n;});
+  return idx;
+}
+function currentCode(){return sel.desa||sel.kec||sel.kab||sel.prov||'';}
+function apply(){
+  const code=currentCode();
+  if(!code){ // national
+    setKpis(nationNode()); renderChartsNational(); renderTable('nation'); drawProvinces(); crumb(); return;
+  }
+  const node=treeByCode[code]; if(node) setKpis(node);
+  renderCharts(code); crumb();
+  // table shows children of deepest selection
+  let level= sel.desa?'desa': sel.kec?'kec': sel.kab?'kab':'prov';
+  renderTable(level, code);
+  // map
+  if(sel.kab && !sel.kec){ drawBubbles('kab', sel.kab); document.getElementById('mapNote').textContent='Gelembung = kecamatan (ukuran ∝ penduduk). Klik untuk menelusuri.'; }
+  else if(sel.prov && !sel.kab){ drawBubbles('prov', sel.prov); document.getElementById('mapNote').textContent='Gelembung = kabupaten/kota. Klik untuk menelusuri.'; }
+  else if(sel.kec){ const k=treeByCode[sel.kec]; if(k&&k.lat){clearLayer(); const m=L.circleMarker([k.lat,k.lng],{radius:12,fillColor:'#ffd23f',color:'#0f1419',weight:2,fillOpacity:.85}).bindTooltip(k.name+': '+fmt(k.pop),{permanent:false}); mapLayer.addLayer(m); map.setView([k.lat,k.lng],10);} document.getElementById('mapNote').textContent='Desa/kelurahan ditampilkan pada tabel (geometri desa tidak tersedia).'; }
+}
+function renderChartsNational(){
+  drawDoughnut('c_religion', topRows(nationVars.religion),'t_religion');
+  drawDoughnut('c_agegroup', orderRows(nationVars.agegroup,'agegroup'),'t_agegroup');
+  drawDoughnut('c_marital', orderRows(nationVars.marital,'marital'),'t_marital');
+  drawBar('c_education', orderRows(nationVars.education,'education'),'t_education','#5ed3a8');
+  drawBar('c_industry', topRows(nationVars.industry).slice(0,12),'t_industry','#ffb454');
+  drawBar('c_employ', topRows(nationVars.employ),'t_employ','#b98cff');
+  drawDoughnut('c_disability', topRows(nationVars.disability),'t_disability');
+}
+const topRows=o=>Object.entries(o||{}).map(([k,v])=>[k==='null'?'Tidak terjawab':k,v]).sort((a,b)=>b[1]-a[1]);
+const orderRows=(o,v)=>{const r=Object.entries(o||{}).map(([k,x])=>[k==='null'?'Tidak terjawab':k,x]);r.sort((a,b)=>(ORDER[v].indexOf(a[0])-ORDER[v].indexOf(b[0])));return r;};
+
+// ---------- init ----------
+(async()=>{
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([-2.5,118],5);
+  mapLayer=L.layerGroup().addTo(map);
+  let nvArr;
+  [provinces,geo,nvArr]=await Promise.all([J('data/provinces.json'),J('geo/indonesia-prov.geojson'),J('data/nation_vars.json')]);
+  nationVars={}; nvArr.forEach(r=>{(nationVars[r.var]=nationVars[r.var]||{})[r.lbl==null?'null':r.lbl]=r.n;});
+  // dropdown listeners
+  document.getElementById('selProv').onchange=e=>{ if(e.target.value) selectProvince(e.target.value); };
+  document.getElementById('selKab').onchange=e=>{ sel.kab=e.target.value; sel.kec='';sel.desa=''; syncDropdowns(); apply(); };
+  document.getElementById('selKec').onchange=e=>{ sel.kec=e.target.value; sel.desa=''; syncDropdowns(); apply(); };
+  document.getElementById('selDesa').onchange=e=>{ sel.desa=e.target.value; apply(); };
+  document.getElementById('resetBtn').onclick=()=>{ sel={prov:'',kab:'',kec:'',desa:''}; tree=null; fillSelect('selProv',provinces.map(p=>({code:p.code,name:p.province_name})).sort((a,b)=>a.name.localeCompare(b.name)),'— pilih provinsi —',''); ['selKab','selKec','selDesa'].forEach(id=>document.getElementById(id).innerHTML='<option value="">— semua —</option>'); apply(); };
+  // initial national view
+  fillSelect('selProv', provinces.map(p=>({code:p.code,name:p.province_name})).sort((a,b)=>a.name.localeCompare(b.name)),'— pilih provinsi —','');
+  treeByCode={}; childrenByParent={};
+  setKpis(nationNode()); renderChartsNational(); renderTable('nation'); drawProvinces(); crumb();
 })();
 </script>
 </body>
