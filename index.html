@@ -93,7 +93,8 @@
     <div class="card" style="margin:0"><h2>Penyandang Kesulitan/Disabilitas</h2><div class="note" id="t_disability"></div><div class="chartbox"><canvas id="c_disability"></canvas></div></div>
   </div>
 
-  <div class="grid" style="margin-top:18px">
+  <div style="text-align:right;margin:18px 2px 8px"><span class="pill" id="dlBtn">⭳ Unduh CSV suku &amp; bahasa (wilayah terpilih)</span></div>
+  <div class="grid">
     <div class="card" style="margin:0"><h2>Bahasa Sehari-hari</h2><div class="note" id="t_language"></div><div class="chartbox tall"><canvas id="c_language"></canvas></div></div>
     <div class="card" style="margin:0"><h2>Suku Bangsa</h2><div class="note" id="t_ethnicity"></div><div class="chartbox tall"><canvas id="c_ethnicity"></canvas></div></div>
   </div>
@@ -174,10 +175,26 @@ function renderCharts(code){
   drawBar('c_industry', distRows(code,'industry').slice(0,12),'t_industry','#ffb454');
   drawBar('c_employ', distRows(code,'employ'),'t_employ','#b98cff');
   drawDoughnut('c_disability', distRows(code,'disability'),'t_disability');
-  drawBar('c_language', lainLast(distRows(code,'language')),'t_language','#6fd0e8');
-  drawBar('c_ethnicity', lainLast(distRows(code,'ethnicity')),'t_ethnicity','#ff8c66');
+  drawRank('c_language', distRows(code,'language'),'t_language','#6fd0e8');
+  drawRank('c_ethnicity', distRows(code,'ethnicity'),'t_ethnicity','#ff8c66');
 }
-const lainLast=rows=>{const r=rows.filter(x=>x[0]!=='Lainnya'),l=rows.find(x=>x[0]==='Lainnya');if(l)r.push(l);return r;};
+// ranked %-bar: top-10 named groups + folded "Lainnya", values shown as % of region total
+function drawRank(id, rows, noteId, color){
+  const total=rows.reduce((a,b)=>a+b[1],0)||1;
+  const named=rows.filter(r=>r[0]!=='Lainnya').sort((a,b)=>b[1]-a[1]);
+  let lain=rows.filter(r=>r[0]==='Lainnya').reduce((a,b)=>a+b[1],0);
+  const top=named.slice(0,10); lain+=named.slice(10).reduce((a,b)=>a+b[1],0);
+  const show=top.concat(lain>0?[['Lainnya',lain]]:[]);
+  const lbls=show.map(r=>r[0]), counts=show.map(r=>r[1]), pct=counts.map(c=>+(c/total*100).toFixed(2));
+  document.getElementById(noteId).textContent='Total '+fmt(total)+' jiwa · nilai = % dari total';
+  if(charts[id]){charts[id].data.labels=lbls;charts[id].data.datasets[0].data=pct;charts[id]._counts=counts;charts[id]._total=total;charts[id].update();return;}
+  charts[id]=new Chart(document.getElementById(id),{type:'bar',
+    data:{labels:lbls,datasets:[{data:pct,backgroundColor:color}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.toFixed(2)+'%  ('+fmt(charts[id]._counts[c.dataIndex])+' jiwa)'}}},
+      scales:{x:{grid,ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
+  charts[id]._counts=counts; charts[id]._total=total;
+}
 
 // ---------- KPIs + crumb ----------
 function setKpis(node){
@@ -307,10 +324,25 @@ function renderChartsNational(){
   drawBar('c_industry', topRows(nationVars.industry).slice(0,12),'t_industry','#ffb454');
   drawBar('c_employ', topRows(nationVars.employ),'t_employ','#b98cff');
   drawDoughnut('c_disability', topRows(nationVars.disability),'t_disability');
-  drawBar('c_language', lainLast(topRows(nationVars.language)),'t_language','#6fd0e8');
-  drawBar('c_ethnicity', lainLast(topRows(nationVars.ethnicity)),'t_ethnicity','#ff8c66');
+  drawRank('c_language', topRows(nationVars.language),'t_language','#6fd0e8');
+  drawRank('c_ethnicity', topRows(nationVars.ethnicity),'t_ethnicity','#ff8c66');
 }
 const topRows=o=>Object.entries(o||{}).map(([k,v])=>[k==='null'?'Tidak terjawab':k,v]).sort((a,b)=>b[1]-a[1]);
+// CSV export of suku & bahasa for the current selection
+function regionRows(v){const c=currentCode(); return c?distRows(c,v):topRows(nationVars[v]);}
+function downloadCSV(){
+  const code=currentCode();
+  const regName=(code?(treeByCode[code]?.name||code):'Indonesia');
+  const mk=(v)=>{const rows=regionRows(v).sort((a,b)=>(a[0]==='Lainnya')-(b[0]==='Lainnya')||b[1]-a[1]);
+    const tot=rows.reduce((a,b)=>a+b[1],0)||1;
+    return rows.map(r=>[v==='ethnicity'?'Suku Bangsa':'Bahasa', '"'+r[0].replace(/"/g,'')+'"', r[1], (r[1]/tot*100).toFixed(3)].join(','));};
+  const lines=['wilayah,kode,variabel,kategori,jumlah,persen'];
+  ['ethnicity','language'].forEach(v=>mk(v).forEach(row=>lines.push('"'+regName+'",'+(code||'-')+','+row)));
+  const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='sp2010_suku_bahasa_'+(code||'indonesia')+'_'+regName.replace(/[^A-Za-z0-9]+/g,'_')+'.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
 const orderRows=(o,v)=>{const r=Object.entries(o||{}).map(([k,x])=>[k==='null'?'Tidak terjawab':k,x]);r.sort((a,b)=>(ORDER[v].indexOf(a[0])-ORDER[v].indexOf(b[0])));return r;};
 
 // ---------- init ----------
@@ -325,6 +357,7 @@ const orderRows=(o,v)=>{const r=Object.entries(o||{}).map(([k,x])=>[k==='null'?'
   document.getElementById('selKab').onchange=e=>{ sel.kab=e.target.value; sel.kec='';sel.desa=''; syncDropdowns(); apply(); };
   document.getElementById('selKec').onchange=e=>{ sel.kec=e.target.value; sel.desa=''; syncDropdowns(); apply(); };
   document.getElementById('selDesa').onchange=e=>{ sel.desa=e.target.value; apply(); };
+  document.getElementById('dlBtn').onclick=downloadCSV;
   document.getElementById('resetBtn').onclick=()=>{ sel={prov:'',kab:'',kec:'',desa:''}; tree=null; fillSelect('selProv',provinces.map(p=>({code:p.code,name:p.province_name})).sort((a,b)=>a.name.localeCompare(b.name)),'— pilih provinsi —',''); ['selKab','selKec','selDesa'].forEach(id=>document.getElementById(id).innerHTML='<option value="">— semua —</option>'); apply(); };
   // initial national view
   fillSelect('selProv', provinces.map(p=>({code:p.code,name:p.province_name})).sort((a,b)=>a.name.localeCompare(b.name)),'— pilih provinsi —','');
