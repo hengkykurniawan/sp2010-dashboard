@@ -1,0 +1,21 @@
+[
+	{"industry":"Pertanian tanaman padi & palawija","code":"01","persons":24356551},
+	{"industry":"Perdagangan","code":"11","persons":17129381},
+	{"industry":"Industri pengolahan","code":"08","persons":11290246},
+	{"industry":"Jasa kemasyarakatan, pemerintahan & perorangan","code":"18","persons":11129880},
+	{"industry":"Perkebunan","code":"03","persons":9766076},
+	{"industry":"Konstruksi/bangunan","code":"10","persons":5506134},
+	{"industry":"Transportasi & pergudangan","code":"13","persons":4741146},
+	{"industry":"Jasa pendidikan","code":"16","persons":4219896},
+	{"industry":"Hortikultura","code":"02","persons":2265901},
+	{"industry":"Hotel & rumah makan","code":"12","persons":2158480},
+	{"industry":"Peternakan","code":"05","persons":2141287},
+	{"industry":"Perikanan","code":"04","persons":1934637},
+	{"industry":"Lainnya","code":"19","persons":1711359},
+	{"industry":"Jasa kesehatan","code":"17","persons":1137018},
+	{"industry":"Pertambangan & penggalian","code":"07","persons":1124388},
+	{"industry":"Keuangan & asuransi","code":"15","persons":1110226},
+	{"industry":"Informasi & komunikasi","code":"14","persons":646753},
+	{"industry":"Kehutanan & pertanian lainnya","code":"06","persons":384401},
+	{"industry":"Listrik & gas","code":"09","persons":380052}
+]

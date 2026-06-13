@@ -1,0 +1,13 @@
+[
+	{"education":"Tidak terjawab","code":" ","persons":2635},
+	{"education":"Tidak terjawab","code":"0","persons":13252034},
+	{"education":"Tidak/belum tamat SD","code":"1","persons":12212800},
+	{"education":"Tamat SD/MI/sederajat","code":"2","persons":56656572},
+	{"education":"Tamat SLTP/MTs/sederajat","code":"3","persons":35225348},
+	{"education":"Tamat SLTA/MA/sederajat","code":"4","persons":36372428},
+	{"education":"Tamat SM Kejuruan","code":"5","persons":4074589},
+	{"education":"Tamat Dip I/II","code":"6","persons":1587159},
+	{"education":"Tamat Dip III/Akademi","code":"7","persons":2478204},
+	{"education":"Tamat Dip IV/S1","code":"8","persons":6652405},
+	{"education":"Tamat S2/S3","code":"9","persons":511984}
+]

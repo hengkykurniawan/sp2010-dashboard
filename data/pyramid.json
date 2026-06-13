@@ -1,0 +1,19 @@
+[
+	{"band":0,"age_band":"0-4","male":11661346,"female":11015294},
+	{"band":5,"age_band":"5-9","male":11973045,"female":11278425},
+	{"band":10,"age_band":"10-14","male":11661412,"female":11007734},
+	{"band":15,"age_band":"15-19","male":10613482,"female":10265500},
+	{"band":20,"age_band":"20-24","male":9886933,"female":10003105},
+	{"band":25,"age_band":"25-29","male":10630490,"female":10678291},
+	{"band":30,"age_band":"30-34","male":9948608,"female":9880607},
+	{"band":35,"age_band":"35-39","male":9336842,"female":9166947},
+	{"band":40,"age_band":"40-44","male":8322160,"female":8201661},
+	{"band":45,"age_band":"45-49","male":7032317,"female":7007826},
+	{"band":50,"age_band":"50-54","male":5865647,"female":5694964},
+	{"band":55,"age_band":"55-59","male":4400061,"female":4048010},
+	{"band":60,"age_band":"60-64","male":2926992,"female":3131370},
+	{"band":65,"age_band":"65-69","male":2225010,"female":2468785},
+	{"band":70,"age_band":"70-74","male":1531376,"female":1924774},
+	{"band":75,"age_band":"75-79","male":842292,"female":1135503},
+	{"band":80,"age_band":"80+","male":763898,"female":1092707}
+]

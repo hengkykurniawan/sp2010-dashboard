@@ -1,0 +1,9 @@
+[
+	{"status":"Buruh/karyawan/pegawai","persons":34642427},
+	{"status":"Berusaha sendiri","persons":23792650},
+	{"status":"Pekerja keluarga/tidak dibayar","persons":15152267},
+	{"status":"Berusaha dibantu buruh tidak tetap/tidak dibayar","persons":13451217},
+	{"status":"Pekerja bebas","persons":12516390},
+	{"status":"Berusaha dibantu buruh tetap/dibayar","persons":3491336},
+	{"status":"Tidak terjawab","persons":87526}
+]

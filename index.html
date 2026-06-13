@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sensus Penduduk 2010 — Indonesia</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2230; --panel2:#222c3d; --ink:#e8edf4; --muted:#8b9bb0;
+    --line:#2c3a4f; --accent:#4ea1ff; --male:#4ea1ff; --female:#ff6b9d;
+    --c1:#4ea1ff;--c2:#5ed3a8;--c3:#ffb454;--c4:#ff6b9d;--c5:#b98cff;--c6:#ffd23f;--c7:#6fd0e8;--c8:#ff8c66;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Segoe UI',system-ui,sans-serif}
+  header{padding:32px 28px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#16202e,#0f1419)}
+  h1{margin:0 0 4px;font-size:26px;letter-spacing:-.3px}
+  .sub{color:var(--muted);font-size:14px}
+  .flag{display:inline-block;width:26px;height:17px;border-radius:2px;overflow:hidden;vertical-align:-3px;margin-right:8px;box-shadow:0 0 0 1px #0006}
+  .flag i{display:block;height:50%}
+  .wrap{max-width:1240px;margin:0 auto;padding:24px 20px 60px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .kpi .v{font-size:28px;font-weight:700;letter-spacing:-.5px}
+  .kpi .l{color:var(--muted);font-size:13px;margin-top:2px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+  .card.full{grid-column:1/-1}
+  .card h2{margin:0 0 2px;font-size:16px}
+  .card .note{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+  .chartbox{position:relative;height:320px}
+  .chartbox.tall{height:440px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  th.sorted::after{content:' ▾';color:var(--accent)}
+  tbody tr:hover{background:var(--panel2)}
+  .bar{display:inline-block;height:8px;border-radius:4px;background:var(--accent);vertical-align:middle}
+  footer{color:var(--muted);font-size:12.5px;text-align:center;padding:30px 20px;border-top:1px solid var(--line);margin-top:40px}
+  a{color:var(--accent);text-decoration:none}
+  @media(max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding-bottom:0">
+    <h1><span class="flag"><i style="background:#e1241b"></i><i style="background:#fff"></i></span>Sensus Penduduk 2010</h1>
+    <div class="sub">Full-count microdata · 237,6 juta jiwa · 33 provinsi · Badan Pusat Statistik (BPS)</div>
+  </div>
+</header>
+<div class="wrap">
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Piramida Penduduk</h2>
+      <div class="note">Distribusi umur &amp; jenis kelamin (kelompok 5 tahun)</div>
+      <div class="chartbox tall"><canvas id="pyramid"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Agama</h2>
+      <div class="note">Komposisi penduduk menurut agama</div>
+      <div class="chartbox tall"><canvas id="religion"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Pendidikan Tertinggi (umur 15+)</h2>
+      <div class="note">Ijazah/STTB tertinggi yang dimiliki</div>
+      <div class="chartbox"><canvas id="education"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Lapangan Usaha</h2>
+      <div class="note">Penduduk bekerja menurut sektor</div>
+      <div class="chartbox"><canvas id="industry"></canvas></div>
+    </div>
+    <div class="card full">
+      <h2>Perkotaan vs Perdesaan menurut Pulau</h2>
+      <div class="note">Jumlah penduduk perkotaan dan perdesaan</div>
+      <div class="chartbox"><canvas id="urban"></canvas></div>
+    </div>
+    <div class="card full">
+      <h2>Provinsi</h2>
+      <div class="note">Klik judul kolom untuk mengurutkan</div>
+      <div style="overflow-x:auto"><table id="ptable"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+<footer>
+  Sumber: Sensus Penduduk 2010 (SP2010), Badan Pusat Statistik · Data diolah dari microdata pencacahan lengkap (C1).<br>
+  Dibuat dengan DuckDB + Chart.js.
+</footer>
+
+<script>
+const PALETTE=['#4ea1ff','#5ed3a8','#ffb454','#ff6b9d','#b98cff','#ffd23f','#6fd0e8','#ff8c66'];
+const fmt=n=>n.toLocaleString('id-ID');
+const fmtM=n=> (n>=1e6? (n/1e6).toFixed(1)+' jt' : n>=1e3? (n/1e3).toFixed(0)+' rb' : n);
+Chart.defaults.color='#8b9bb0';
+Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+Chart.defaults.plugins.legend.labels.boxWidth=12;
+const grid={color:'#2c3a4f'};
+
+async function J(f){const r=await fetch('data/'+f);return r.json();}
+
+(async()=>{
+  const [prov,pyr,rel,edu,ind,urb] = await Promise.all(
+    ['provinces.json','pyramid.json','religion.json','education.json','industry.json','urban_island.json'].map(J));
+
+  // KPIs
+  const total=prov.reduce((s,p)=>s+p.persons,0);
+  const urbanPersons=prov.reduce((s,p)=>s+p.persons*p.pct_urban/100,0);
+  const meanAge=prov.reduce((s,p)=>s+p.mean_age*p.persons,0)/total;
+  const males=pyr.reduce((s,b)=>s+b.male,0), females=pyr.reduce((s,b)=>s+b.female,0);
+  const kpi=[
+    ['Total Penduduk',fmt(total)],
+    ['Rasio Jenis Kelamin',(males/females*100).toFixed(1)+' L/100P'],
+    ['% Perkotaan',(urbanPersons/total*100).toFixed(1)+'%'],
+    ['Rata-rata Umur',meanAge.toFixed(1)+' th'],
+  ];
+  document.getElementById('kpis').innerHTML=kpi.map(k=>`<div class="kpi"><div class="v">${k[1]}</div><div class="l">${k[0]}</div></div>`).join('');
+
+  // Pyramid
+  new Chart(pyramid,{type:'bar',data:{labels:pyr.map(b=>b.age_band),
+    datasets:[
+      {label:'Laki-laki',data:pyr.map(b=>-b.male),backgroundColor:'#4ea1ff'},
+      {label:'Perempuan',data:pyr.map(b=>b.female),backgroundColor:'#ff6b9d'}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      scales:{x:{stacked:true,grid,ticks:{callback:v=>fmtM(Math.abs(v))}},
+              y:{stacked:true,grid:{display:false},reverse:true}},
+      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(Math.abs(c.raw))}}}}});
+
+  // Religion doughnut
+  new Chart(religion,{type:'doughnut',data:{labels:rel.map(r=>r.religion),
+    datasets:[{data:rel.map(r=>r.persons),backgroundColor:PALETTE,borderColor:'#1a2230',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{legend:{position:'right'},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' ('+(c.raw/total*100).toFixed(1)+'%)'}}}}});
+
+  // Education
+  new Chart(education,{type:'bar',data:{labels:edu.map(e=>e.education),
+    datasets:[{data:edu.map(e=>e.persons),backgroundColor:'#5ed3a8'}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+      scales:{x:{grid,ticks:{callback:fmtM}},y:{grid:{display:false}}}}});
+
+  // Industry (top 10)
+  const top=ind.slice(0,10);
+  new Chart(industry,{type:'bar',data:{labels:top.map(i=>i.industry),
+    datasets:[{data:top.map(i=>i.persons),backgroundColor:'#ffb454'}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
+      scales:{x:{grid,ticks:{callback:fmtM}},y:{grid:{display:false}}}}});
+
+  // Urban by island
+  new Chart(urban,{type:'bar',data:{labels:urb.map(u=>u.island),
+    datasets:[
+      {label:'Perkotaan',data:urb.map(u=>u.urban),backgroundColor:'#4ea1ff'},
+      {label:'Perdesaan',data:urb.map(u=>u.rural),backgroundColor:'#5ed3a8'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid,ticks:{callback:fmtM}}},
+      plugins:{tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}});
+
+  // Province table
+  const cols=[['province_name','Provinsi'],['island','Pulau'],['persons','Penduduk'],
+    ['pct_urban','% Kota'],['mean_age','Umur'],['sex_ratio','Rasio JK']];
+  const maxP=Math.max(...prov.map(p=>p.persons));
+  let sortKey='persons',sortDir=-1;
+  const thead=document.querySelector('#ptable thead'), tbody=document.querySelector('#ptable tbody');
+  function render(){
+    thead.innerHTML='<tr>'+cols.map(c=>`<th data-k="${c[0]}" class="${c[0]===sortKey?'sorted':''}">${c[1]}</th>`).join('')+'</tr>';
+    const rows=[...prov].sort((a,b)=>{const x=a[sortKey],y=b[sortKey];return (x>y?1:x<y?-1:0)*sortDir;});
+    tbody.innerHTML=rows.map(p=>`<tr>
+      <td>${p.province_name}</td><td>${p.island}</td>
+      <td>${fmt(p.persons)} <span class="bar" style="width:${p.persons/maxP*60}px"></span></td>
+      <td>${p.pct_urban}%</td><td>${p.mean_age}</td><td>${p.sex_ratio}</td></tr>`).join('');
+    thead.querySelectorAll('th').forEach(th=>th.onclick=()=>{
+      const k=th.dataset.k; if(k===sortKey)sortDir*=-1; else{sortKey=k;sortDir=(k==='province_name'||k==='island')?1:-1;} render();});
+  }
+  render();
+})();
+</script>
+</body>
+</html>
